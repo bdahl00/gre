@@ -1,0 +1,15 @@
+Package: gre
+Title: Generalized Random Effects
+Version: 0.1.0
+Authors@R: c(person(given = "Benjamin K.", family = "Dahl", role = c("aut", "cre"), email = "benjamin.dahl@duke.edu", comment = c(ORCID = "0009-0008-2502-2210")),
+    person(given = "Alex", family = "Crichton", email = "alex@alexcrichton.com", role = "ctb", comment = c("Rust crate: proc-macro2")),
+    person(given = "David B.", family = "Dahl", email = "dahl@stat.byu.edu", role = "ctb", comment = c("Rust crates: roxido, roxido_macro")),
+    person(given = "David", family = "Tolnay", email = "dtolnay@gmail.com", role = "ctb", comment = c("Rust crates: proc-macro2, quote, syn, unicode-ident")),
+    person())
+Description: Computes and returns generalized random effect residuals
+License: MIT + file LICENSE | Apache License 2.0
+Depends: R (>= 4.2.0)
+SystemRequirements: Cargo (Rust's package manager), rustc (>= 1.65)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1

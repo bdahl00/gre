@@ -1,0 +1,38 @@
+
+R version 4.4.1 (2024-06-14) -- "Race for Your Life"
+Copyright (C) 2024 The R Foundation for Statistical Computing
+Platform: x86_64-pc-linux-gnu
+
+R is free software and comes with ABSOLUTELY NO WARRANTY.
+You are welcome to redistribute it under certain conditions.
+Type 'license()' or 'licence()' for distribution details.
+
+  Natural language support but running in an English locale
+
+R is a collaborative project with many contributors.
+Type 'contributors()' for more information and
+'citation()' on how to cite R or R packages in publications.
+
+Type 'demo()' for some demos, 'help()' for on-line help, or
+'help.start()' for an HTML browser interface to help.
+Type 'q()' to quit R.
+
+> library(gre)
+> greObj <- gre::initialize_gre(100, 10, 2, 2)
+> c_eta <- gre::get_c_eta(greObj)
+> gre::update_sigma2(greObj, 2)
+NULL
+> gre::update_epsilon(greObj, rnorm(100))
+NULL
+> gre::run(greObj)
+NULL
+> 
+> n_scans <- 1000000
+> betamat <- matrix(0, nrow = n_scans, ncol = 100)
+> for (index in 1:n_scans) {
++   gre::run(greObj)
++ }
+> 
+> proc.time()
+   user  system elapsed 
+  7.235   0.693   7.249 
