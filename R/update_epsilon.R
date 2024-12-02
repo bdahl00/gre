@@ -14,5 +14,5 @@
 #' @examples
 #' update_epsilon(greObj, rnorm(100)) # If the sampler has 100 observations
 update_epsilon <- function(ptr, new_epsilon) {
-  .Call(.update_epsilon, ptr, new_epsilon)
+  invisible(.Call(.update_epsilon, ptr, new_epsilon))
 }

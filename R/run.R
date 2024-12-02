@@ -10,5 +10,5 @@
 #' @examples
 #' run(greObj)
 run <- function(ptr) {
-  .Call(.run, ptr)
+  invisible(.Call(.run, ptr))
 }

@@ -13,5 +13,5 @@
 #' @examples
 #' update_sigma2(greObj, 2)
 update_sigma2 <- function(ptr, new_sigma2) {
-  .Call(.update_sigma2, ptr, new_sigma2)
+  invisible(.Call(.update_sigma2, ptr, new_sigma2))
 }
