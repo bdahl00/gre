@@ -1,6 +1,8 @@
 use rand::prelude::*;
-use rand_distr::{Beta, Distribution, Gamma, Normal, Poisson, StandardNormal, Uniform};
+use rand_distr::{Beta, Distribution, Normal, Poisson, StandardNormal, Uniform};
 use statrs::function::*;
+
+use crate::adaptive_params::AdaptiveParams;
 
 pub struct GreObj {
     pub num_obs: usize,
@@ -14,6 +16,7 @@ pub struct GreObj {
     pub kappa: f64,
     pub s: nalgebra::DVector<f64>,
     pub lambda: nalgebra::DVector<f64>,
+    pub lambda_pp: Vec<AdaptiveParams>,
     pub prior_lambda_shape: f64,
     pub prior_lambda_rate: f64,
     pub eta: nalgebra::DVector<f64>,
@@ -27,6 +30,8 @@ impl GreObj {
         prior_lambda_shape: f64,
         prior_lambda_rate: f64,
     ) -> Self {
+        let mut lambda_pp_vec: Vec<AdaptiveParams> = Vec::with_capacity(num_eigs);
+        lambda_pp_vec.resize(num_eigs, AdaptiveParams::new(0.0001)); // TODO: is the mean right?
         let mut pre_epsilon: Vec<f64> = Vec::with_capacity(num_obs);
         let mut rng = rand::thread_rng();
         let norm = Normal::new(0.0, 1.0).unwrap();
@@ -68,6 +73,7 @@ impl GreObj {
             kappa: eps_t_eps_mini / eps_t_eps,
             s: nalgebra::DVector::from_vec(pre_s),
             lambda: nalgebra::DVector::from_vec(vec![1.0; num_eigs]),
+            lambda_pp: lambda_pp_vec,
             prior_lambda_shape,
             prior_lambda_rate,
             eta: pre_eta,
@@ -133,14 +139,47 @@ impl GreObj {
         }
     }
 
+    pub fn update_lambda_i(&mut self, new_lambda_i: f64, index: usize) {
+        self.lambda[index] = new_lambda_i;
+        self.lambda_pp[index].update(new_lambda_i, self.scan_index);
+    }
+
     pub fn sample_lambda(&mut self) {
-        let mut rng = rand::thread_rng();
         for index in 0..self.num_eigs {
-            let gamma = Gamma::new(
-                self.prior_lambda_shape + 0.5,
-                1.0 / (self.prior_lambda_rate + self.eta[index].powi(2) / 2.0),
-            );
-            self.lambda[index] = 1.0 / gamma.unwrap().sample(&mut rng);
+            let prop_lambda_i = self.lambda_pp[index].sample();
+            if prop_lambda_i < 0.0 {
+                self.update_lambda_i(self.lambda[index], index);
+                continue;
+            }
+
+            let curr_lambda_i = self.lambda[index];
+            let curr_l_post = -(self.sigma2 + curr_lambda_i).ln() / 2.0
+                + self.kappa * self.eps_t_eps * curr_lambda_i * self.s[index].powi(2)
+                    / (self.sigma2 + curr_lambda_i)
+                    / 2.0
+                    / self.sigma2
+                + (self.prior_lambda_shape - 1.0) * curr_lambda_i.ln() // This is the contribution from the prior
+                - self.prior_lambda_rate * curr_lambda_i;
+            let prop_l_post = -(self.sigma2 + prop_lambda_i).ln() / 2.0
+                + self.kappa * self.eps_t_eps * prop_lambda_i * self.s[index].powi(2)
+                    / (self.sigma2 + curr_lambda_i)
+                    / 2.0
+                    / self.sigma2
+                + (self.prior_lambda_shape - 1.0) * curr_lambda_i.ln() // Again, from the prior
+                - self.prior_lambda_rate * curr_lambda_i;
+            let trans_kern_diff = (prop_lambda_i + curr_lambda_i
+                - 2.0 * self.lambda_pp[index].mean)
+                * (prop_lambda_i - curr_lambda_i)
+                / 2.0
+                / self.lambda_pp[index].variance;
+            let mut rng = rand::thread_rng();
+            if prop_l_post - curr_l_post + trans_kern_diff
+                > Uniform::new(0.0_f64, 1.0_f64).sample(&mut rng).ln()
+            {
+                self.update_lambda_i(prop_lambda_i, index);
+            } else {
+                self.update_lambda_i(curr_lambda_i, index);
+            }
         }
     }
 
@@ -269,8 +308,8 @@ impl GreObj {
     pub fn run_sampler(&mut self) {
         self.sample_kappa();
         self.sample_s();
-        self.sample_eta();
         self.sample_lambda();
+        self.sample_eta();
         self.sample_c_eta();
         self.scan_index += 1;
     }

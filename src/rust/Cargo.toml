@@ -16,6 +16,7 @@ lto = "thin"
 [dependencies]
 nalgebra = "0.33.0"
 rand = "0.8.5"
+statrs = "0.18.0"
 rand_distr = "0.4.3"
 roxido = { path="roxido" }
 # roxido_faer = { path="roxido_faer" }
